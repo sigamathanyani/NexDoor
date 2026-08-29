@@ -18,7 +18,7 @@ ENV/
 # Environment variables / secrets
 .env
 .env.*
-!.env.example
+.env.example
 
 # IDE / editor
 .vscode/
@@ -42,6 +42,9 @@ instance/
 # Database
 *.sqlite3
 *.db
+
+# Requests
+api.http
 
 # OS files
 .DS_Store
