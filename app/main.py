@@ -1,13 +1,10 @@
 from fastapi import FastAPI
-from app.config import settings
 from app.database.db import Base, engine
-from app.models.user_model import UserTable
+from app.routes.auth_routes import router as auth_router
 
 app = FastAPI()
 
-@app.get('/')
-def home():
-    return {'home': settings.database_url}
+app.include_router(auth_router, prefix='/auth')
 
 
 Base.metadata.create_all(bind=engine)
