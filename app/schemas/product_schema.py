@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.enums.pricing_unit import PricingUnit
 from app.enums.product_status import ProductStatus
@@ -14,32 +14,78 @@ class CreateProduct(BaseModel):
     product_type: ProductType
     price: Decimal
     pricing_unit: PricingUnit
-    status: ProductStatus
-    
-    @field_validator('name')
+
+    @field_validator("name")
     def validate_name(name):
-        validator = string_validator(name)
+        validator = string_validator(name, "name")
         if validator is not None:
             raise ValueError(validator)
         return name
-    
-    @field_validator('description')
+
+    @field_validator("description")
     def validate_description(description):
-        validator = string_validator(description)
+        validator = string_validator(description, "description")
         if validator is not None:
             raise ValueError(validator)
         return description
-    
-    @field_validator('price')
+
+    @field_validator("price")
     def validate_price(price):
         if price < 1:
             raise ValueError("Price must be atleast 1")
         return price
-    
-    @field_validator('pricing_unit')
-    def validate_unit(self, pricing_unit, info):
-        product_type = info.data['product_type']
+
+    @field_validator("pricing_unit")
+    def validate_unit(cls, pricing_unit, info):
+        product_type = info.data["product_type"]
         validator = enum_validator(product_type, pricing_unit)
         if validator is not None:
             raise ValueError(validator)
         return pricing_unit
+
+class UpdateProduct(BaseModel):
+    name: str
+    description: str
+    product_type: ProductType
+    price: Decimal
+    pricing_unit: PricingUnit
+    product_status: ProductStatus
+
+    @field_validator("name")
+    def validate_name(name):
+        validator = string_validator(name, "name")
+        if validator is not None:
+            raise ValueError(validator)
+        return name
+
+    @field_validator("description")
+    def validate_description(description):
+        validator = string_validator(description, "description")
+        if validator is not None:
+            raise ValueError(validator)
+        return description
+
+    @field_validator("price")
+    def validate_price(price):
+        if price < 1:
+            raise ValueError("Price must be atleast 1")
+        return price
+
+    @field_validator("pricing_unit")
+    def validate_unit(cls, pricing_unit, info):
+        product_type = info.data["product_type"]
+        validator = enum_validator(product_type, pricing_unit)
+        if validator is not None:
+            raise ValueError(validator)
+        return pricing_unit
+
+
+class ProductResponse(BaseModel):
+    product_id: int
+    name: str = Field(validation_alias='product_name')
+    description: str = Field(validation_alias='product_description')
+    product_type: ProductType
+    price: Decimal
+    pricing_unit: PricingUnit
+
+    model_config = ConfigDict(from_attributes=True)
