@@ -10,35 +10,16 @@ from app.models.media_model import ProductMediaTable
 from app.models.product_model import ProductTable
 from app.schemas.product_media_schema import (
     ProductMediaResponse,
-    RequestPresignedUrlData,
     S3MediaObjectResponse,
     CreateProductMediaObject,
 )
 from app.schemas.user_schema import CurrentUser
+from app.utils.aws_utils import get_s3_key, get_presigned_url_helper
 
 from botocore.exceptions import ClientError
 
 
-def _presigned_url(s3_key: str, client_method, s3_client, content_type):
-    method_params = {
-        "Bucket": settings.AWS_S3_BUCKET_NAME,
-        "Key": s3_key,  # will be different for get - we have it in the DB
-    }
-    if client_method == "put_object":
-        method_params["ContentType"] = content_type
-
-    expires_in = 3600
-
-    try:
-        presigned_url = s3_client.generate_presigned_url(
-            ClientMethod=client_method, Params=method_params, ExpiresIn=expires_in
-        )
-    except ClientError:
-        raise
-
-    return presigned_url
-
-
+# WORK WHEN UPLOADING IMAGES TO ALREADY EXISTING PRODUCT
 def get_presigned_url(
     db: Session,
     product_id: int,
@@ -46,7 +27,7 @@ def get_presigned_url(
     s3_client,
     client_method,
 ):
-    
+
     product = (
         db.query(ProductTable)
         .filter(
@@ -72,11 +53,8 @@ def get_presigned_url(
 
     s3_key = ""
     if client_method == "put_object":
-        extension = "png"  # data.content_type.split("/")[1]
-        file_id = str(uuid.uuid4())
-        file_unique_name = f"products/{product_id}/{file_id}.{extension}"  # S3 keys
-        s3_key = file_unique_name
-        presigned_url = _presigned_url(
+        s3_key = get_s3_key()
+        presigned_url = get_presigned_url_helper(
             s3_key=s3_key,
             client_method=client_method,
             s3_client=s3_client,
@@ -90,24 +68,35 @@ def get_presigned_url(
             .where(ProductMediaTable.product_id == product_id)
             .all()
         )
-        # s3_key = product.
-        media_urls = []
+
+        get_media_urls = []
         for product_media in product_medias:
-            presigned_url = _presigned_url(
+            presigned_url = get_presigned_url_helper(
                 s3_key=product_media.s3_key,
                 client_method=client_method,
                 s3_client=s3_client,
                 content_type="image/png",
             )
 
-            media_urls.append(presigned_url)
-        
-            # res = s3_client.get_object(
-            #         Bucket=settings.AWS_S3_BUCKET_NAME, Key=product_media.s3_key
-            #     )
-            # byt = res['Body'].read()
-            # input(byt)
-        presigned_url = media_urls
+            get_media_urls.append(presigned_url)
+        presigned_url = get_media_urls
+
+    return S3MediaObjectResponse(presigned_url=presigned_url, s3_key=s3_key)
+
+
+# WORK WHEN UPLOADING IMAGES WHEN CREATING A PRODUCT
+def get_presigned_url_for_creation(
+    s3_client,
+    client_method,
+):
+    s3_key = get_s3_key()
+    
+    presigned_url = get_presigned_url_helper(
+        s3_key=s3_key,
+        client_method=client_method,
+        s3_client=s3_client,
+        content_type="image/png",
+    )
 
     return S3MediaObjectResponse(presigned_url=presigned_url, s3_key=s3_key)
 
