@@ -118,21 +118,24 @@ def get_all_products(
 
 def get_single_product(db: Session, s3_client, product_id: int):
 
-    s3_key, product = (
+    products = (
         db.query(ProductMediaTable.s3_key, ProductTable)
         .join(ProductTable, ProductTable.product_id == ProductMediaTable.product_id)
         .where(
-            ProductMediaTable.is_primary == True, ProductTable.product_id == product_id
+            ProductTable.product_id == product_id
         )
-        .first()
+        .all()
     )
-
-    product_image_url = get_presigned_url_helper(
-        s3_key=s3_key,
-        client_method="get_object",
-        s3_client=s3_client,
-        content_type="image/png",
-    )
+    _, product = products[0] 
+    product_images = []
+    for s3_key, _ in products:
+        product_images.append(get_presigned_url_helper(
+            s3_key=s3_key,
+            client_method="get_object",
+            s3_client=s3_client,
+            content_type="image/png",
+        ))
+        
 
     return ProductResponse(
         product_id=product.product_id,
@@ -141,7 +144,7 @@ def get_single_product(db: Session, s3_client, product_id: int):
         product_type=product.product_type,
         price=product.price,
         pricing_unit=product.pricing_unit,
-        image=product_image_url,
+        image=product_images,
     )
 
 
