@@ -39,7 +39,6 @@ def get_all_products(
         .all()
     )
 
-
 def get_single_product(db: Session, product_id: int):
     return (
         db.query(ProductTable)

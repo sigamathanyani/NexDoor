@@ -5,6 +5,7 @@ from app.database.db import get_db
 from app.dependencies.auth_dependency import get_current_user
 from app.dependencies.aws_dependency import get_s3_client
 from app.schemas.product_media_schema import (
+    ProductMediaResponse,
     RequestPresignedUrlData,
     S3MediaObjectResponse,
     CreateProductMediaObject,
@@ -16,11 +17,12 @@ router = APIRouter()
 
 
 @router.post(
-    "/get-presigned-url",
+    "/get-presigned-url/{product_id}",
     status_code=status.HTTP_200_OK,
     response_model=S3MediaObjectResponse,
 )
-def get_presigned_url_route(
+def get_presigned_url_for_upload_route(
+    product_id: int,
     data: RequestPresignedUrlData,
     current_user=Depends(get_current_user),
     s3_client=Depends(get_s3_client),
@@ -28,22 +30,45 @@ def get_presigned_url_route(
 ):
     return get_presigned_url(
         db,
-        data,
+        product_id,
+        # data,
         current_user,
         s3_client,
+        client_method='put_object'
+    )
+
+@router.get(
+    "/get-product-media-url/{product_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=S3MediaObjectResponse,
+)
+def get_presigned_url_for_getting_route(
+    product_id: int,
+    current_user=Depends(get_current_user),
+    s3_client=Depends(get_s3_client),
+    db: Session = Depends(get_db),
+):
+    return get_presigned_url(
+        db,
+        product_id,
+        current_user,
+        s3_client,
+        client_method='get_object'
     )
 
 
 @router.post(
-    "save-media",
+    "/{product_id}/save-media",
     status_code=status.HTTP_201_CREATED,
+    response_model=ProductMediaResponse
 )
 def save_s3_media_route(
     data: CreateProductMediaObject,
+    product_id: int,
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
     s3_client=Depends(get_s3_client),
 ):
-    return save_s3_media_route(
-        data=data, db=db, current_user=current_user, s3_client=s3_client
+    return save_s3_media(
+        product_id=product_id, data=data, db=db, current_user=current_user, s3_client=s3_client
     )

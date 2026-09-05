@@ -8,6 +8,7 @@ class ProductMediaTable(Base):
     __tablename__ = 'ProductMedia'
     
     media_id = Column(Integer, primary_key=True, index=True, nullable=False)
+    file_name = Column(name='file_name', type_=String(255), nullable=False)
     product_id = Column(Integer, ForeignKey("Products.product_id"), nullable=False, index=True)
     s3_key = Column(name='s3_key', type_=Text, nullable=False,)
     media_type = Column(name='media_type', type_=SQLAlchemyEnum(MediaType), nullable=False)
