@@ -89,7 +89,9 @@ class UpdateProduct(BaseModel):
 
     @field_validator("pricing_unit")
     def validate_unit(cls, pricing_unit, info):
-        product_type = info.data["product_type"]
+        product_type = info.data.get('product_type')
+        if product_type is None:
+            return pricing_unit
         validator = enum_validator(product_type, pricing_unit)
         if validator is not None:
             raise ValueError(validator)

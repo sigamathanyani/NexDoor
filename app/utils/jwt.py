@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException, status
 from jose import ExpiredSignatureError, JWTError, jwt
 
-from app.utils.status_codes import StatusCodes
+from app.utils.error_codes import ErrorCode
 
 
 from app.config import settings
@@ -34,7 +34,7 @@ def decode_token(token: str):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "message": "Token has expired please log in again",
-                "error_code": StatusCodes.AUTH_TOKEN_EXPIRED
+                "error_code": ErrorCode.AUTH_TOKEN_EXPIRED
             }
         )
     except JWTError:
@@ -42,6 +42,6 @@ def decode_token(token: str):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "message": "Invalid Token",
-                "error_code": StatusCodes.AUTH_TOKEN_INVALID
+                "error_code": ErrorCode.AUTH_TOKEN_INVALID
             }
         )

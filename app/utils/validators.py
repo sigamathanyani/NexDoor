@@ -2,6 +2,9 @@ from enum import Enum
 
 from app.enums.pricing_unit import PricingUnit
 from app.enums.product_type import ProductType
+from app.exceptions.app_exception import AppException
+from app.utils.error_codes import ErrorCode
+from fastapi import status
 
 
 def password_validator(password: str) -> str | None:
@@ -40,7 +43,11 @@ def enum_validator(type_: ProductType, unit: PricingUnit) -> str | None:
     }
     
     if unit not in unit_dict[type_]:
-        return f'{unit.name} must be of type {type_}'
+        raise AppException(
+            message=f'{unit.value} is not a valid pricing unit for {type_.value} product',
+            error_code=ErrorCode.BAD_REQUEST,
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
     
     return None
     
