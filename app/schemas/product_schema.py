@@ -14,6 +14,8 @@ class CreateProduct(BaseModel):
     product_type: ProductType
     price: Decimal
     pricing_unit: PricingUnit
+    s3_key: str
+    image_name: str
 
     @field_validator("name")
     def validate_name(name):
@@ -28,6 +30,20 @@ class CreateProduct(BaseModel):
         if validator is not None:
             raise ValueError(validator)
         return description
+    
+    @field_validator("image_name")
+    def validate_image_name(image_name):
+        validator = string_validator(image_name, "image_name")
+        if validator is not None:
+            raise ValueError(validator)
+        return image_name
+    
+    @field_validator("s3_key")
+    def validate_s3_key(s3_key):
+        validator = string_validator(s3_key, "s3_key")
+        if validator is not None:
+            raise ValueError(validator)
+        return s3_key
 
     @field_validator("price")
     def validate_price(price):
@@ -87,5 +103,6 @@ class ProductResponse(BaseModel):
     product_type: ProductType
     price: Decimal
     pricing_unit: PricingUnit
+    image: str | list[str]
 
     model_config = ConfigDict(from_attributes=True)
