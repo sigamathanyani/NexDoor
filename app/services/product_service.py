@@ -1,3 +1,6 @@
+from fastapi import status
+
+from botocore.exceptions import ClientError
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
@@ -5,13 +8,12 @@ from app.enums.media_type import MediaType
 from app.enums.product_status import ProductStatus
 from app.models.media_model import ProductMediaTable
 from app.models.product_model import ProductTable
-from app.schemas.product_media_schema import CreateProductMediaObject
 from app.schemas.product_schema import CreateProduct, ProductResponse, UpdateProduct
 from app.schemas.user_schema import CurrentUser
-from app.utils.aws_utils import get_s3_key, get_presigned_url_helper
+from app.exceptions.app_exception import AppException
+from app.utils.error_codes import ErrorCode
+from app.utils.aws_utils import get_presigned_url_helper, error_helper
 from app.config import settings
-
-from botocore.exceptions import ClientError
 
 
 def create_product(
@@ -37,8 +39,8 @@ def create_product(
         response = s3_client.head_object(
             Bucket=settings.AWS_S3_BUCKET_NAME, Key=product_data.s3_key
         )
-    except ClientError:
-        raise
+    except ClientError as e:
+        error_helper(e)
 
     media = response["ContentType"].split("/")[0]
     if media == "image":
@@ -46,7 +48,11 @@ def create_product(
     elif media == "video":
         type_ = MediaType.VIDEO
     else:
-        raise
+        raise AppException(
+            "The media you are trying to upload is not supported. Only images and videos",
+            error_code=ErrorCode.MEDIA_TYPE_NOT_SUPPORTED,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     product_media = ProductMediaTable(
         product_id=new_product.product_id,
@@ -121,21 +127,28 @@ def get_single_product(db: Session, s3_client, product_id: int):
     products = (
         db.query(ProductMediaTable.s3_key, ProductTable)
         .join(ProductTable, ProductTable.product_id == ProductMediaTable.product_id)
-        .where(
-            ProductTable.product_id == product_id
-        )
+        .where(ProductTable.product_id == product_id)
         .all()
     )
-    _, product = products[0] 
+
+    if not products:
+        raise AppException(
+            message="The product is not found",
+            error_code=ErrorCode.PRODUCT_NOT_FOUND,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    _, product = products[0]
     product_images = []
     for s3_key, _ in products:
-        product_images.append(get_presigned_url_helper(
-            s3_key=s3_key,
-            client_method="get_object",
-            s3_client=s3_client,
-            content_type="image/png",
-        ))
-        
+        product_images.append(
+            get_presigned_url_helper(
+                s3_key=s3_key,
+                client_method="get_object",
+                s3_client=s3_client,
+                content_type="image/png",
+            )
+        )
 
     return ProductResponse(
         product_id=product.product_id,
@@ -166,7 +179,11 @@ def update_single_product(
     )
 
     if product_to_update is None:
-        return None
+        raise AppException(
+            message="You are not allowed to modify this product",
+            error_code=ErrorCode.AUTH_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
 
     product_to_update.product_name = product_updated.name
     product_to_update.product_description = product_updated.description
@@ -201,7 +218,11 @@ def delete_single_product(db: Session, product_id: int, current_user: CurrentUse
     )
 
     if product_to_delete is None:
-        return None
+        raise AppException(
+            message="You are not allowed to delete this product",
+            error_code=ErrorCode.AUTH_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
 
     product_to_delete.product_status = ProductStatus.INACTIVE
     db.commit()

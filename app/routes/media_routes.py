@@ -11,7 +11,11 @@ from app.schemas.product_media_schema import (
     CreateProductMediaObject,
 )
 from app.schemas.user_schema import CurrentUser
-from app.services.media_service import get_presigned_url, get_presigned_url_for_creation, save_s3_media
+from app.services.media_service import (
+    get_presigned_url,
+    get_presigned_url_for_creation,
+    save_s3_media,
+)
 
 router = APIRouter()
 
@@ -34,8 +38,9 @@ def get_presigned_url_for_upload_route(
         # data,
         current_user,
         s3_client,
-        client_method='put_object'
+        client_method="put_object",
     )
+
 
 @router.post(
     "/get-presigned-url-for-creation/",
@@ -45,10 +50,8 @@ def get_presigned_url_for_upload_route(
 def get_presigned_url_for_upload_for_creation_route(
     s3_client=Depends(get_s3_client),
 ):
-    return get_presigned_url_for_creation(
-        s3_client,
-        client_method='put_object'
-    )
+    return get_presigned_url_for_creation(s3_client, client_method="put_object")
+
 
 @router.get(
     "/get-product-media-url/{product_id}",
@@ -62,18 +65,14 @@ def get_presigned_url_for_getting_route(
     db: Session = Depends(get_db),
 ):
     return get_presigned_url(
-        db,
-        product_id,
-        current_user,
-        s3_client,
-        client_method='get_object'
+        db, product_id, current_user, s3_client, client_method="get_object"
     )
 
 
 @router.post(
     "/{product_id}/save-media",
     status_code=status.HTTP_201_CREATED,
-    response_model=ProductMediaResponse
+    response_model=ProductMediaResponse,
 )
 def save_s3_media_route(
     data: CreateProductMediaObject,
@@ -83,5 +82,9 @@ def save_s3_media_route(
     s3_client=Depends(get_s3_client),
 ):
     return save_s3_media(
-        product_id=product_id, data=data, db=db, current_user=current_user, s3_client=s3_client
+        product_id=product_id,
+        data=data,
+        db=db,
+        current_user=current_user,
+        s3_client=s3_client,
     )
