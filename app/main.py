@@ -44,6 +44,17 @@ def request_validation_exception_handler(request: Request, exc: RequestValidatio
     )
 
 
+@app.exception_handler(Exception)
+def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        content=ExceptionResponse(
+            message="Something went wrong from our side",
+            error_code=ErrorCode.INTERNAL_SERVER_ERROR,
+        ).model_dump(),
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    )
+
+
 app.include_router(auth_router, prefix="/auth")
 app.include_router(product_router, prefix="/products")
 app.include_router(media_router, prefix="/media")
