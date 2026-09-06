@@ -24,9 +24,7 @@ def get_current_user(
 
     user = db.query(UserTable).filter(UserTable.user_id == user_id).first()
     current_user = CurrentUser(
-        user_id = user.user_id,
-        name = user.name,
-        surname = user.surname
+        user_id=user.user_id, name=user.name, surname=user.surname
     )
 
     if not user:

@@ -30,14 +30,14 @@ class CreateProduct(BaseModel):
         if validator is not None:
             raise ValueError(validator)
         return description
-    
+
     @field_validator("image_name")
     def validate_image_name(image_name):
         validator = string_validator(image_name, "image_name")
         if validator is not None:
             raise ValueError(validator)
         return image_name
-    
+
     @field_validator("s3_key")
     def validate_s3_key(s3_key):
         validator = string_validator(s3_key, "s3_key")
@@ -58,6 +58,7 @@ class CreateProduct(BaseModel):
         if validator is not None:
             raise ValueError(validator)
         return pricing_unit
+
 
 class UpdateProduct(BaseModel):
     name: str
@@ -89,7 +90,7 @@ class UpdateProduct(BaseModel):
 
     @field_validator("pricing_unit")
     def validate_unit(cls, pricing_unit, info):
-        product_type = info.data.get('product_type')
+        product_type = info.data.get("product_type")
         if product_type is None:
             return pricing_unit
         validator = enum_validator(product_type, pricing_unit)
@@ -100,8 +101,8 @@ class UpdateProduct(BaseModel):
 
 class ProductResponse(BaseModel):
     product_id: int
-    name: str = Field(validation_alias='product_name')
-    description: str = Field(validation_alias='product_description')
+    name: str = Field(validation_alias="product_name")
+    description: str = Field(validation_alias="product_description")
     product_type: ProductType
     price: Decimal
     pricing_unit: PricingUnit

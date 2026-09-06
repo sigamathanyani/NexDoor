@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+
+
 from app.database.db import Base, engine
 from app.routes.auth_routes import router as auth_router
 from app.routes.product_routes import router as product_router

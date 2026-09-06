@@ -45,9 +45,9 @@ def authenticate_user(data: AuthenticateUser, db: Session) -> TokenResponse:
 
     if not existing_user:
         raise AppException(
-            message='Email or password is incorrect, please verify',
+            message="Email or password is incorrect, please verify",
             error_code=ErrorCode.AUTH_INVALID_CREDENTIALS,
-            status_code=status.HTTP_401_UNAUTHORIZED
+            status_code=status.HTTP_401_UNAUTHORIZED,
         )
     # check if the password matches
     password_is_match = verify_hash(existing_user.hash_password, data.password)
@@ -55,9 +55,9 @@ def authenticate_user(data: AuthenticateUser, db: Session) -> TokenResponse:
     # if password do not match -> raise http exception
     if not password_is_match:
         raise AppException(
-            message='Email or password is incorrect, please verify',
+            message="Email or password is incorrect, please verify",
             error_code=ErrorCode.AUTH_INVALID_CREDENTIALS,
-            status_code=status.HTTP_401_UNAUTHORIZED
+            status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
     payload = {"user_id": existing_user.user_id}

@@ -1,10 +1,10 @@
-import uuid
+from fastapi import status
 
+from botocore.exceptions import ClientError
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from app.config import settings
-
 from app.enums.media_type import MediaType
 from app.models.media_model import ProductMediaTable
 from app.models.product_model import ProductTable
@@ -15,12 +15,8 @@ from app.schemas.product_media_schema import (
 )
 from app.schemas.user_schema import CurrentUser
 from app.utils.aws_utils import error_helper, get_s3_key, get_presigned_url_helper
-
-from botocore.exceptions import ClientError
-
 from app.exceptions.app_exception import AppException
 from app.utils.error_codes import ErrorCode
-from fastapi import status
 
 
 # WORK WHEN UPLOADING IMAGES TO ALREADY EXISTING PRODUCT

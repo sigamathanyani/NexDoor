@@ -1,4 +1,6 @@
 from fastapi import status
+
+from botocore.exceptions import ClientError
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
@@ -12,8 +14,6 @@ from app.exceptions.app_exception import AppException
 from app.utils.error_codes import ErrorCode
 from app.utils.aws_utils import get_presigned_url_helper, error_helper
 from app.config import settings
-
-from botocore.exceptions import ClientError
 
 
 def create_product(
