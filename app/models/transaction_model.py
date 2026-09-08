@@ -50,4 +50,5 @@ class TransactionTable(Base):
         type_=SQLALchemyDateTime(timezone=True),
         nullable=False,
         onupdate=func.now(),
+        server_default=func.now(),
     )

@@ -7,6 +7,7 @@ from app.database.db import Base, engine
 from app.routes.auth_routes import router as auth_router
 from app.routes.product_routes import router as product_router
 from app.routes.media_routes import router as media_router
+from app.routes.transaction_routes import router as transaction_router
 from app.exceptions.app_exception import AppException
 from app.schemas.exception_schema import ExceptionResponse
 from app.utils.error_codes import ErrorCode
@@ -58,6 +59,7 @@ def global_exception_handler(request: Request, exc: Exception):
 app.include_router(auth_router, prefix="/auth")
 app.include_router(product_router, prefix="/products")
 app.include_router(media_router, prefix="/media")
+app.include_router(transaction_router, prefix="/transaction")
 
 
 Base.metadata.create_all(bind=engine)
