@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database.db import get_db
 from app.dependencies.auth_dependency import get_current_user
-from app.schemas.transaction_schema import TransactionResponse
+from app.schemas.transaction_schema import CreateTransaction, TransactionResponse
 from app.schemas.user_schema import CurrentUser
 from app.services.transaction_service import create_transaction
 
@@ -17,7 +17,8 @@ router = APIRouter()
 )
 def create_transaction_route(
     product_id: int,
+    data: CreateTransaction,
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ):
-    return create_transaction(product_id=product_id, db=db, current_user=current_user)
+    return create_transaction(product_id=product_id, data=data, db=db, current_user=current_user)
