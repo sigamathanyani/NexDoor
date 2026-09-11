@@ -143,11 +143,25 @@ def create_transaction(
             status=TransactionStatus.PENDING,
             amount=total_price,
             scheduled_start_date=data.scheduled_start,
-            scheduled_end_date=data.scheduled_end
+            scheduled_end_date=data.scheduled_end,
         )
 
     elif product.product_type == ProductType.SERVICE:
-        ...
+        if data.scheduled_start is None:
+            raise AppException(
+                message="Please provide a starting date",
+                error_code=ErrorCode.MISSING_START_OR_END_DATE,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        transaction = TransactionTable(
+            product_id=product_id,
+            provider_id=product.user_id,
+            customer_id=current_user.user_id,
+            status=TransactionStatus.PENDING,
+            amount=product.price,
+            scheduled_start_date=data.scheduled_start,
+        )
 
     else:
         raise AppException(
