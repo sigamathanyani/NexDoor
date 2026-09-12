@@ -87,17 +87,27 @@ def create_product(
 
 
 def get_all_products(
+    query_params,
     db: Session,
     s3_client,
 ):
-    products = (
+    q = (
         db.query(ProductMediaTable.s3_key, ProductTable)
         .join(ProductTable, ProductTable.product_id == ProductMediaTable.product_id)
         .where(
             ProductMediaTable.is_primary == True,
+            ProductTable.product_status == ProductStatus.ACTIVE,
         )
-        .all()
     )
+
+    if query_params.product_query is not None:
+        param_value = query_params.product_query
+        q = q.filter(
+            ProductTable.product_name.ilike(f"%{param_value}%")
+            | ProductTable.product_description.ilike(f"%{param_value}%"),
+        )
+
+    products = q.all()
 
     all_products = []
 

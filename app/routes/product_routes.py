@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException
 
 from app.database.db import get_db
 from app.dependencies.auth_dependency import get_current_user
+from app.schemas.filter_schema import FilterParams
 from app.schemas.product_schema import CreateProduct, ProductResponse, UpdateProduct
 from app.schemas.user_schema import CurrentUser
 from app.services.product_service import (
@@ -32,8 +35,13 @@ def add_product(
 
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=list[ProductResponse])
-def get_products_route(db: Session = Depends(get_db), s3_client=Depends(get_s3_client)):
+def get_products_route(
+    query_params: Annotated[FilterParams, Query()],
+    db: Session = Depends(get_db),
+    s3_client=Depends(get_s3_client),
+):
     return get_all_products(
+        query_params,
         db=db,
         s3_client=s3_client,
     )
