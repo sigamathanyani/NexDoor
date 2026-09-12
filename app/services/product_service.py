@@ -1,11 +1,14 @@
+from decimal import Decimal
+
 from fastapi import status
 
 from botocore.exceptions import ClientError
-from sqlalchemy import and_
+from sqlalchemy import UnaryExpression, and_
 from sqlalchemy.orm import Session
 
 from app.enums.media_type import MediaType
 from app.enums.product_status import ProductStatus
+from app.enums.sorting import SortBy, SortOrder
 from app.models.media_model import ProductMediaTable
 from app.models.product_model import ProductTable
 from app.schemas.product_schema import CreateProduct, ProductResponse, UpdateProduct
@@ -87,17 +90,43 @@ def create_product(
 
 
 def get_all_products(
+    query_params,
     db: Session,
     s3_client,
 ):
-    products = (
+    q = (
         db.query(ProductMediaTable.s3_key, ProductTable)
         .join(ProductTable, ProductTable.product_id == ProductMediaTable.product_id)
         .where(
             ProductMediaTable.is_primary == True,
+            ProductTable.product_status == ProductStatus.ACTIVE,
         )
-        .all()
     )
+
+    if query_params.product_query is not None:
+        param_value = query_params.product_query
+        q = q.filter(
+            ProductTable.product_name.ilike(f"%{param_value}%")
+            | ProductTable.product_description.ilike(f"%{param_value}%"),
+        )
+
+    if query_params.product_type:
+        q = q.filter(ProductTable.product_type.in_(query_params.product_type))
+
+    if query_params.category_filter:
+        q = q.filter(ProductTable.category.in_(query_params.category_filter))
+
+    if query_params.sort_by:
+        order: UnaryExpression[Decimal]
+        if query_params.sort_by == SortBy.PRICE:
+            if query_params.sort_order == SortOrder.ASC:
+                order = ProductTable.price.asc()
+            elif query_params.sort_order == SortOrder.DESC:
+                order = ProductTable.price.desc()
+
+        q = q.order_by(order)
+
+    products = q.all()
 
     all_products = []
 
