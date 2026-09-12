@@ -10,6 +10,7 @@ from sqlalchemy import (
 from sqlalchemy import Enum as SQLAlchemyEnum
 
 from app.database.db import Base
+from app.enums.categories import Category
 from app.enums.pricing_unit import PricingUnit
 from app.enums.product_status import ProductStatus
 from app.enums.product_type import ProductType
@@ -44,6 +45,7 @@ class ProductTable(Base):
         nullable=False,
         default=ProductStatus.ACTIVE,
     )
+    category = Column(name="category", type_=SQLAlchemyEnum(Category), nullable=False)
     created_at = Column(
         name="created_at",
         type_=SQLALchemyDateTime(
@@ -52,3 +54,4 @@ class ProductTable(Base):
         nullable=False,
         server_default=func.now(),
     )
+
