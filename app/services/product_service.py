@@ -107,6 +107,13 @@ def get_all_products(
             | ProductTable.product_description.ilike(f"%{param_value}%"),
         )
 
+    # print(query_params.product_type)
+    if query_params.product_type:
+        q = q.filter(ProductTable.product_type.in_(query_params.product_type))
+    
+    if query_params.category_filter:
+        q = q.filter(ProductTable.category.in_(query_params.category_filter))
+
     products = q.all()
 
     all_products = []
