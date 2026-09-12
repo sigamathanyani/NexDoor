@@ -29,6 +29,7 @@ def create_product(
         product_type=product_data.product_type,
         price=product_data.price,
         pricing_unit=product_data.pricing_unit,
+        category=product_data.category,
     )
 
     db.add(new_product)
@@ -80,6 +81,7 @@ def create_product(
         product_type=new_product.product_type,
         price=new_product.price,
         pricing_unit=new_product.pricing_unit,
+        category=product_data.category,
         image=product_image_url,
     )
 
@@ -115,6 +117,7 @@ def get_all_products(
                 product_type=product.product_type,
                 price=product.price,
                 pricing_unit=product.pricing_unit,
+                category=product.category,
                 image=product_image_url,
             )
         )
@@ -157,6 +160,7 @@ def get_single_product(db: Session, s3_client, product_id: int):
         product_type=product.product_type,
         price=product.price,
         pricing_unit=product.pricing_unit,
+        category=product.category,
         image=product_images,
     )
 
@@ -201,6 +205,7 @@ def update_single_product(
         product_description=product_to_update.product_description,
         product_type=product_to_update.product_type,
         price=product_to_update.price,
+        category=product_to_update.category,
         pricing_unit=product_to_update.pricing_unit,
     )
 

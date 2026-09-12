@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.enums.categories import Category
 from app.enums.pricing_unit import PricingUnit
 from app.enums.product_status import ProductStatus
 from app.enums.product_type import ProductType
@@ -14,6 +15,7 @@ class CreateProduct(BaseModel):
     product_type: ProductType
     price: Decimal
     pricing_unit: PricingUnit
+    category: Category
     s3_key: str
     image_name: str
 
@@ -58,6 +60,14 @@ class CreateProduct(BaseModel):
         if validator is not None:
             raise ValueError(validator)
         return pricing_unit
+    
+    # @field_validator("category")
+    # def validate_unit(cls, category, info):
+    #     product_type = info.data["product_type"]
+    #     validator = enum_validator(product_type, category)
+    #     if validator is not None:
+    #         raise ValueError(validator)
+    #     return category
 
 
 class UpdateProduct(BaseModel):
@@ -106,6 +116,7 @@ class ProductResponse(BaseModel):
     product_type: ProductType
     price: Decimal
     pricing_unit: PricingUnit
+    category: Category
     image: str | list[str]
 
     model_config = ConfigDict(from_attributes=True)
