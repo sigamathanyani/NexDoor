@@ -13,6 +13,7 @@ from app.models.product_model import ProductTable
 from app.models.transaction_model import TransactionTable
 from app.schemas.transaction_schema import CreateTransaction, TransactionResponse
 from app.schemas.user_schema import CurrentUser
+from app.services.notification_service import create_notification
 from app.utils.error_codes import ErrorCode
 
 
@@ -59,6 +60,7 @@ def create_transaction(
                         TransactionStatus.PENDING,
                         TransactionStatus.IN_PROGRESS,
                         TransactionStatus.COMPLETED,
+                        TransactionStatus.ACCEPTED,
                     ]
                 ),
             )
@@ -106,8 +108,7 @@ def create_transaction(
             )
             .all()
         )
-        # print(transactions)
-        # input(type(transactions[0]))
+
         for transaction in transactions:
             if (
                 transaction.scheduled_end_date > data.scheduled_start
@@ -171,6 +172,12 @@ def create_transaction(
         )
 
     db.add(transaction)
+    db.flush()
+    
+    create_notification(
+        db=db, transaction_id=transaction.transaction_id, recipient_user_id=product.user_id
+    )
+    
     db.commit()
     db.refresh(transaction)
 
