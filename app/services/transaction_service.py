@@ -11,7 +11,7 @@ from app.enums.transaction_status import TransactionStatus
 from app.exceptions.app_exception import AppException
 from app.models.product_model import ProductTable
 from app.models.transaction_model import TransactionTable
-from app.schemas.transaction_schema import CreateTransaction, TransactionResponse
+from app.schemas.transaction_schema import AcceptTransactionResponse, CreateTransaction, RejectTransactionResponse, TransactionResponse
 from app.schemas.user_schema import CurrentUser
 from app.services.notification_service import create_notification
 from app.utils.error_codes import ErrorCode
@@ -173,12 +173,81 @@ def create_transaction(
 
     db.add(transaction)
     db.flush()
-    
+
     create_notification(
-        db=db, transaction_id=transaction.transaction_id, recipient_user_id=product.user_id
+        db=db,
+        transaction_id=transaction.transaction_id,
+        recipient_user_id=product.user_id,
     )
-    
+
     db.commit()
     db.refresh(transaction)
 
     return TransactionResponse(message=message)
+
+
+def accept_transaction(db: Session, current_user: CurrentUser, transaction_id: int):
+    transaction = (
+        db.query(TransactionTable)
+        .where(
+            TransactionTable.transaction_id == transaction_id,
+            TransactionTable.provider_id == current_user.user_id,
+            TransactionTable.status == TransactionStatus.PENDING,
+        )
+        .first()
+    )
+
+    if transaction is None:
+        raise AppException(
+            message=f"Transaction of {transaction_id} does not exist or you are not the owner",
+            error_code=ErrorCode.TRANSACTION_NOT_FOUND,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    transaction.status = TransactionStatus.ACCEPTED
+    create_notification(
+        db=db,
+        transaction_id=transaction.transaction_id,
+        recipient_user_id=transaction.customer_id,
+    )
+
+    db.commit()
+    db.refresh(transaction)
+    
+    return AcceptTransactionResponse(
+        message='You have accepted this transaction',
+        transaction_id=transaction.transaction_id
+    )
+
+def reject_transaction(db: Session, current_user: CurrentUser, transaction_id: int):
+    transaction = (
+        db.query(TransactionTable)
+        .where(
+            TransactionTable.transaction_id == transaction_id,
+            TransactionTable.provider_id == current_user.user_id,
+            TransactionTable.status == TransactionStatus.PENDING,
+        )
+        .first()
+    )
+
+    if transaction is None:
+        raise AppException(
+            message=f"Transaction of {transaction_id} does not exist or you are not the owner",
+            error_code=ErrorCode.TRANSACTION_NOT_FOUND,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    transaction.status = TransactionStatus.REJECTED
+    create_notification(
+        db=db,
+        transaction_id=transaction.transaction_id,
+        recipient_user_id=transaction.customer_id,
+    )
+
+    db.commit()
+    db.refresh(transaction)
+    
+    return RejectTransactionResponse(
+        message='You have rejected this transaction',
+        transaction_id=transaction.transaction_id
+    )

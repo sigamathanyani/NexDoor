@@ -8,3 +8,12 @@ class CreateTransaction(BaseModel):
     
 class TransactionResponse(BaseModel):
     message: str
+
+
+class AcceptTransactionResponse(BaseModel):
+    message: str
+    transaction_id: int
+
+class RejectTransactionResponse(BaseModel):
+    message: str
+    transaction_id: int

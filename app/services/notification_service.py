@@ -117,3 +117,5 @@ def get_notification(
         message=f"You have a new rental request for '{p.product_name}' from {u.name} {u.surname}. Total: R{t.amount}.",
         is_read=n.is_read,
     )
+
+
