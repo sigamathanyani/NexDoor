@@ -117,7 +117,7 @@ def get_all_products(
         q = q.filter(ProductTable.category.in_(query_params.category_filter))
 
     if query_params.sort_by:
-        order: UnaryExpression[Decimal]
+        order: UnaryExpression[Decimal] = ProductTable.price.asc()
         if query_params.sort_by == SortBy.PRICE:
             if query_params.sort_order == SortOrder.ASC:
                 order = ProductTable.price.asc()
