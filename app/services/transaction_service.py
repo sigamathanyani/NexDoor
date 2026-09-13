@@ -14,6 +14,7 @@ from app.models.transaction_model import TransactionTable
 from app.schemas.transaction_schema import AcceptTransactionResponse, CreateTransaction, RejectTransactionResponse, TransactionResponse
 from app.schemas.user_schema import CurrentUser
 from app.services.notification_service import create_notification
+from app.services.payment_service import start_payment
 from app.utils.error_codes import ErrorCode
 
 
@@ -210,6 +211,12 @@ def accept_transaction(db: Session, current_user: CurrentUser, transaction_id: i
         transaction_id=transaction.transaction_id,
         recipient_user_id=transaction.customer_id,
     )
+    
+    # create_payment(
+    #     db=db,
+    #     transaction_id=transaction.transaction_id,
+    #     amount=transaction.amount
+    # )
 
     db.commit()
     db.refresh(transaction)
