@@ -1,4 +1,3 @@
-from decimal import Decimal
 
 from app.database.db import Base
 
@@ -8,16 +7,18 @@ from sqlalchemy import (
     Integer,
     Numeric,
     DateTime as SQLALchemyDateTime,
+    String,
     func,
 )
 from sqlalchemy import Enum as SQLAlchemyEnum
 
+from app.enums.payment_gateways import PaymentGateway
 from app.enums.payment_status import PaymentStatus
 
 
 class PaymentTable(Base):
-    __tablename__ = 'Payments'
-    
+    __tablename__ = "Payments"
+
     payment_id = Column(Integer, primary_key=True, index=True)
     transaction_id = Column(
         Integer, ForeignKey("Transactions.transaction_id"), nullable=False, index=True
@@ -28,6 +29,14 @@ class PaymentTable(Base):
         type_=SQLAlchemyEnum(PaymentStatus),
         nullable=False,
         server_default=PaymentStatus.UNPAID.value,
+    )
+    payment_gateway = Column(
+        name="gateway",
+        type_=SQLAlchemyEnum(PaymentGateway),
+        nullable=False,
+    )
+    payment_ref = Column(
+        name="payment_ref", type_=String(100), nullable=False, unique=True
     )
     created_at = Column(
         name="created_at",
