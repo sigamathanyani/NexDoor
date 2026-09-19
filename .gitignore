@@ -55,3 +55,6 @@ Thumbs.db
 
 # Docker (if applicable)
 *.pid
+
+# ngrock startup
+start_tunnel.py
