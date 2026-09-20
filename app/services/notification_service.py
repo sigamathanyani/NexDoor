@@ -59,7 +59,7 @@ def get_notifications(
     return [
         NotificationResponse(
             notification_id=n.notification_id,
-            code=NotificationCode.NEW_TRANSACTION,
+            code=NotificationCode.NEW_TRANSACTION, # TODO: SHOULD BE PERSISTED
             message=f"You have a new rental request for '{p.product_name}' from {u.name} {u.surname}. Total: R{t.amount}.",
             is_read=n.is_read,
         )
@@ -113,7 +113,9 @@ def get_notification(
 
     return NotificationResponse(
         notification_id=n.notification_id,
-        code=NotificationCode.NEW_TRANSACTION,
+        code=NotificationCode.NEW_TRANSACTION, # TODO: SHOULD BE PERSISTED
         message=f"You have a new rental request for '{p.product_name}' from {u.name} {u.surname}. Total: R{t.amount}.",
         is_read=n.is_read,
     )
+
+
