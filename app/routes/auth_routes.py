@@ -6,8 +6,18 @@ from sqlalchemy.orm import Session
 
 from app.database.db import get_db
 from app.schemas.user_schema import CreateUser, AuthenticateUser, CurrentUser
-from app.schemas.verification_schema import ResendVerificationLink, VerificationParams
-from app.services.auth_service import create_user, authenticate_user, resend_lost_verification_link, verify_email
+from app.schemas.verification_schema import (
+    ForgetPassword,
+    ResendVerificationLink,
+    VerificationParams,
+)
+from app.services.auth_service import (
+    create_user,
+    authenticate_user,
+    forgot_password,
+    resend_lost_verification_link,
+    verify_email,
+)
 from app.dependencies.auth_dependency import get_current_user
 
 router = APIRouter()
@@ -27,6 +37,7 @@ def login_user(user_data: AuthenticateUser, db: Session = Depends(get_db)):
 def read_current_user(current_user: CurrentUser = Depends(get_current_user)):
     return current_user
 
+
 @router.get("/verify-email")
 def verify_email_route(
     query_params: Annotated[VerificationParams, Query()], db: Session = Depends(get_db)
@@ -36,11 +47,20 @@ def verify_email_route(
         query_params=query_params,
     )
 
+
 @router.post("/resend-verification-email")
 def resend_email_verification_route(
     data: ResendVerificationLink, db: Session = Depends(get_db)
 ):
     return resend_lost_verification_link(
+        data=data,
+        db=db,
+    )
+
+
+@router.post("/forgot-password")
+def forgot_password_route(data: ForgetPassword, db: Session = Depends(get_db)):
+    return forgot_password(
         data=data,
         db=db,
     )

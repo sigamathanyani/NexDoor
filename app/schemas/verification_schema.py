@@ -11,3 +11,9 @@ class VerificationEmailResponse(BaseModel):
 
 class ResendVerificationLink(BaseModel):
     email: EmailStr
+
+class ForgetPassword(BaseModel):
+    email: EmailStr
+    
+class ForgetPasswordResponse(BaseModel):
+    message: str

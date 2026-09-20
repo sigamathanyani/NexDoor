@@ -13,6 +13,8 @@ from app.utils.security import hash_password, verify_hash
 from datetime import datetime, timedelta, timezone
 
 from app.schemas.verification_schema import (
+    ForgetPassword,
+    ForgetPasswordResponse,
     VerificationEmailResponse,
     ResendVerificationLink,
 )
@@ -209,3 +211,33 @@ def resend_lost_verification_link(data: ResendVerificationLink, db: Session):
 
     db.commit()
     return VerificationEmailResponse(message="Check your email for verification link")
+
+
+def forgot_password(data: ForgetPassword, db: Session):
+    raw_token = generate_raw_token()
+    hashed_raw_token = hash_raw_token(raw_token)
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    exp_time = now + timedelta(minutes=TOKEN_EXPIRATION_TIME)
+
+    u = db.query(UserTable).where(UserTable.email == data.email).first()
+
+    if u is None:
+        return ForgetPasswordResponse(
+            message="If an account exists for this email, a password reset link has been sent."
+        )
+
+    verification_token = VerificationTokenTable(
+        user_id=u.user_id,
+        token_hash=hashed_raw_token,
+        token_type=TokenType.PASSWORD_RESET,
+        expires_at=exp_time,
+    )
+    url = f"http://127.0.0.1:8000/auth/forgot-password?token={raw_token}"
+    db.add(verification_token)
+    db.commit()
+    send_email(to=u.email, url_link=url)
+
+    return ForgetPasswordResponse(
+        message="Check your email for reseting password link."
+    )
