@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     PAYSTACK_TEST_PUBLIC_KEY: str
     PAYSTACK_URL: str
     NGROK_AUTHTOKEN: str
+    RESEND_EMAIL_API_KEY: str
     
     model_config = SettingsConfigDict(env_file='.env.example', env_file_encoding='utf-8')
     

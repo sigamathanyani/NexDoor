@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.exceptions.app_exception import AppException
 from app.models.user_model import UserTable
 from app.schemas.user_schema import CreateUser, AuthenticateUser, TokenResponse
+from app.services.verification_service import send_verification_email
 from app.utils.error_codes import ErrorCode
 from app.utils.jwt import generate_token
 from app.utils.security import hash_password, verify_hash
@@ -33,6 +34,10 @@ def create_user(data: CreateUser, db: Session) -> CreateUser:
 
     # save the user in the db
     db.add(user_to_save)
+    db.flush()
+    send_verification_email(
+        db=db, email=data.email, user_id=user_to_save.user_id
+    )
     db.commit()
     db.refresh(user_to_save)
 
