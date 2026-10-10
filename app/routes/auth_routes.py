@@ -8,6 +8,7 @@ from app.database.db import get_db
 from app.schemas.user_schema import CreateUser, AuthenticateUser, CurrentUser
 from app.schemas.verification_schema import (
     ForgetPassword,
+    NewPassword,
     ResendVerificationLink,
     VerificationParams,
 )
@@ -16,6 +17,7 @@ from app.services.auth_service import (
     authenticate_user,
     forgot_password,
     resend_lost_verification_link,
+    reset_password,
     verify_email,
 )
 from app.dependencies.auth_dependency import get_current_user
@@ -58,9 +60,21 @@ def resend_email_verification_route(
     )
 
 
-@router.post("/forgot-password")
+@router.post("/send-forgot-password-link")
 def forgot_password_route(data: ForgetPassword, db: Session = Depends(get_db)):
     return forgot_password(
         data=data,
         db=db,
     )
+
+@router.post("/reset-password")
+def reset_password_route(
+    data: NewPassword, query_params: Annotated[VerificationParams, Query()], db: Session = Depends(get_db)
+):
+    return reset_password(
+        data=data,
+        db=db,
+        query_params=query_params,
+    )
+    
+    

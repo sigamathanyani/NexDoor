@@ -15,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 from app.schemas.verification_schema import (
     ForgetPassword,
     ForgetPasswordResponse,
+    NewPassword,
     VerificationEmailResponse,
     ResendVerificationLink,
 )
@@ -85,9 +86,7 @@ def authenticate_user(data: AuthenticateUser, db: Session) -> TokenResponse:
 
 
 def _send_verification_email(
-    db: Session,
-    email: str,
-    user_id: int,
+    db: Session, email: str, user_id: int, token_type: TokenType
 ):
     raw_token = generate_raw_token()
     hashed_raw_token = hash_raw_token(raw_token)
@@ -98,10 +97,15 @@ def _send_verification_email(
     verification_token = VerificationTokenTable(
         user_id=user_id,
         token_hash=hashed_raw_token,
-        token_type=TokenType.EMAIL_VERIFICATION,
+        token_type=token_type,
         expires_at=exp_time,
     )
-    url = f"http://127.0.0.1:8000/auth/verify-email?token={raw_token}"
+
+    if token_type == TokenType.EMAIL_VERIFICATION:
+        url = f"http://127.0.0.1:8000/auth/verify-email?token={raw_token}"
+    elif token_type == TokenType.PASSWORD_RESET:
+        url = f"http://127.0.0.1:8000/auth/send-forgot-password-link?token={raw_token}"
+
     db.add(verification_token)
     send_email(to=email, url_link=url)
 
@@ -112,9 +116,7 @@ def send_verification_email(
     user_id: int,
 ):
     _send_verification_email(
-        db=db,
-        email=email,
-        user_id=user_id,
+        db=db, email=email, user_id=user_id, token_type=TokenType.EMAIL_VERIFICATION
     )
 
     return VerificationEmailResponse(message="Check your email for verification link")
@@ -196,7 +198,12 @@ def resend_lost_verification_link(data: ResendVerificationLink, db: Session):
     )
 
     if verification is None:
-        _send_verification_email(db=db, email=data.email, user_id=u.user_id)
+        _send_verification_email(
+            db=db,
+            email=data.email,
+            user_id=u.user_id,
+            token_type=TokenType.EMAIL_VERIFICATION,
+        )
     else:
         raw_token = generate_raw_token()
         hashed_raw_token = hash_raw_token(raw_token)
@@ -214,11 +221,6 @@ def resend_lost_verification_link(data: ResendVerificationLink, db: Session):
 
 
 def forgot_password(data: ForgetPassword, db: Session):
-    raw_token = generate_raw_token()
-    hashed_raw_token = hash_raw_token(raw_token)
-
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    exp_time = now + timedelta(minutes=TOKEN_EXPIRATION_TIME)
 
     u = db.query(UserTable).where(UserTable.email == data.email).first()
 
@@ -227,17 +229,81 @@ def forgot_password(data: ForgetPassword, db: Session):
             message="If an account exists for this email, a password reset link has been sent."
         )
 
-    verification_token = VerificationTokenTable(
-        user_id=u.user_id,
-        token_hash=hashed_raw_token,
-        token_type=TokenType.PASSWORD_RESET,
-        expires_at=exp_time,
+    verification = (
+        db.query(VerificationTokenTable)
+        .where(
+            VerificationTokenTable.user_id == u.user_id,
+            VerificationTokenTable.token_type == TokenType.PASSWORD_RESET,
+        )
+        .first()
     )
-    url = f"http://127.0.0.1:8000/auth/forgot-password?token={raw_token}"
-    db.add(verification_token)
+
+    if verification is None:
+        _send_verification_email(
+            db=db, email=u.email, user_id=u.user_id, token_type=TokenType.PASSWORD_RESET
+        )
+    else:
+        raw_token = generate_raw_token()
+        hashed_raw_token = hash_raw_token(raw_token)
+
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        exp_time = now + timedelta(minutes=TOKEN_EXPIRATION_TIME)
+
+        verification.token_hash = hashed_raw_token
+        verification.expires_at = exp_time
+        url = f"http://127.0.0.1:8000/auth/send-forgot-password-link?token={raw_token}"
+        send_email(to=u.email, url_link=url)
     db.commit()
-    send_email(to=u.email, url_link=url)
 
     return ForgetPasswordResponse(
-        message="Check your email for reseting password link."
+        message="If an account exists for this email, a password reset link has been sent."
     )
+
+
+def reset_password(data: NewPassword, db: Session, query_params):
+    raw_token = query_params.token
+    hashed_raw_token = hash_raw_token(raw_token=raw_token)
+    db_token_data = (
+        db.query(VerificationTokenTable)
+        .where(
+            VerificationTokenTable.token_type == TokenType.PASSWORD_RESET,
+            VerificationTokenTable.token_hash == hashed_raw_token,
+        )
+        .first()
+    )
+
+    if db_token_data is None:
+        raise AppException(
+            message="Something is wrong with the link you provided",
+            error_code=ErrorCode.LINK_BROKEN,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    token_expired = (
+        datetime.now(tz=timezone.utc).replace(tzinfo=None) > db_token_data.expires_at
+    )
+    if token_expired:
+        raise AppException(
+            message="The link to verify has already expire please request a new one",
+            error_code=ErrorCode.VERIFICATION_TOKEN_EXPIRED,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    u = db.query(UserTable).where(UserTable.user_id == db_token_data.user_id).first()
+
+    if u is None:
+        raise AppException(
+            message="User not found of this token",
+            error_code=ErrorCode.USER_NOT_FOUND,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if not u.is_verified:
+        return VerificationEmailResponse(message="This account is not verified")
+    hashed_new_password = hash_password(data.new_password)
+    u.hash_password = hashed_new_password
+    db.delete(db_token_data)
+    db.commit()
+    db.refresh(u)
+
+    return ForgetPasswordResponse(message="Password have updated.")

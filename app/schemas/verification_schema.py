@@ -1,4 +1,6 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
+
+from app.utils.validators import password_validator
 
 
 class VerificationParams(BaseModel):
@@ -17,3 +19,13 @@ class ForgetPassword(BaseModel):
     
 class ForgetPasswordResponse(BaseModel):
     message: str
+    
+class NewPassword(BaseModel):
+    new_password: str
+    
+    @field_validator("new_password")
+    def validate_password(new_password):
+        validator = password_validator(new_password)
+        if validator is not None:
+            raise ValueError(validator)
+        return new_password
